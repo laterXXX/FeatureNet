@@ -1,0 +1,12 @@
+### DataSet
+
+- total set 9145
+- train set 5000
+- validation set 2000
+- test set 2145 
+- image size 128*128
+- reduce brightness 2 level
+- increase brightness 2 level
+- blur 2 level
+- original 3 times
+- so per image will train 9 times 
