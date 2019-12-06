@@ -12,8 +12,8 @@ class DataProducer:
     NUMBER_OF_TRAIN_ITERATIONS = 0
     DATA_LIST = []
 
-    def __init__(self, dataset_name, img_res=(64, 64)):
-        self.dataset_name = dataset_name
+    def __init__(self, dataset_file='', img_res=(128, 128)):
+        self.dataset_name = dataset_file
         self.img_res = img_res
         self.img_res_lr = (self.img_res[0] * 2, self.img_res[1])
         self.img_seize_lr = (self.img_res[0], self.img_res[1])
@@ -47,24 +47,62 @@ class DataProducer:
                 category = os.listdir(images_folder + folder)
                 for image in category:
                     # print(images_folder + images_folder + image)
-                    images_path.append(images_folder + images_folder + image)
+                    images_path.append(folder + '/' + image)
                     # images_path.append()
         # f = open(images_folder + 'images_path.txt', 'w+')
         if not os.path.exists(images_folder + 'images_path.txt'):
             self.list_2_file(images_path, images_folder + 'images_path.txt')
         return images_path
 
-    def make_labels(self, imgtxt_path):
+    def make_labels(self, file_path, file_name):
         """
         :param images_folder:
         :return:
         """
-        if not os.path.exists(imgtxt_path):
+        if not os.path.exists(file_path + file_name):
             return 'path wrong'
+        orb = cv2.ORB_create()
+        arr = np.zeros((8, 128, 128))
+        with open(file_path + file_name, 'r') as f:
+            lines = f.readlines()
 
+            for line in lines:
+                line = line.strip('\n')
+                category = line[:line.rindex('/')]
 
-        with open(imgtxt_path, 'r') as f:
+                if line[line.rfind('.') + 1:] == 'jpg':
+                    img_name = line[line.rindex('/') + 1:line.rindex('.')].strip('\n')
 
+                # with open( ,'w+') as txt_file:
+                img = cv2.imread((file_path + line).strip('\n'), 0)
+
+                img = cv2.resize(img, (128, 128), img)
+
+                kps = orb.detect(img, None)
+                del img
+
+                for kp in kps:
+                    angle = kp.angle
+                    class_id = kp.class_id
+                    octave = kp.octave
+                    pt = kp.pt
+                    response = kp.response
+                    size = kp.size
+
+                    x = int(pt[0])
+                    y = int(pt[1])
+
+                    arr[0, x, y] = 1
+                    arr[1, x, y] = angle
+                    arr[2, x, y] = class_id
+                    arr[3, x, y] = octave
+                    arr[4, x, y] = x
+                    arr[5, x, y] = y
+                    arr[6, x, y] = response
+                    arr[7, x, y] = size
+
+                np.save(file_path + category + '/' + img_name + '.npy', arr)
+                arr[arr != 0] = 0
 
 
 
@@ -147,11 +185,15 @@ class DataProducer:
     def read_img(self, images_folder):
         pass
 
+    def get_label(self):
+        pass
+
+    def get_data(self, batchsize):
+        pass
 
 
 if __name__ == '__main__':
-    data_producer = DataProducer()
-
     path = 'F:/paper/101_ObjectCategories/101_ObjectCategories/'
+    data_producer = DataProducer(path)
 
-    res = data_producer.partition_data('/home/later/Tools/data/')
+    res = data_producer.make_labels(path, 'images_path.txt')

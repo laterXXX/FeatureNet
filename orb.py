@@ -8,7 +8,7 @@ orb = cv2.ORB_create()
 
 kp = orb.detect(img, None)
 
-kp, des = orb.compute(img, kp)
+# kp, des = orb.compute(img, kp)
 
 img = cv2.drawKeypoints(img, kp, img, color=(0, 255, 0), flags=0)
 
