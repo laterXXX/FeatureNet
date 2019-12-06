@@ -151,4 +151,7 @@ class DataProducer:
 
 if __name__ == '__main__':
     data_producer = DataProducer()
+
+    path = 'F:/paper/101_ObjectCategories/101_ObjectCategories/'
+
     res = data_producer.partition_data('/home/later/Tools/data/')
