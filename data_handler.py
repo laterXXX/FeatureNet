@@ -12,8 +12,8 @@ class DataProducer:
     NUMBER_OF_TRAIN_ITERATIONS = 0
     DATA_LIST = []
 
-    def __init__(self, dataset_file='', img_res=(128, 128)):
-        self.dataset_name = dataset_file
+    def __init__(self, file_path='', img_res=(128, 128)):
+        self.file_path = file_path
         self.img_res = img_res
         self.img_res_lr = (self.img_res[0] * 2, self.img_res[1])
         self.img_seize_lr = (self.img_res[0], self.img_res[1])
@@ -54,16 +54,16 @@ class DataProducer:
             self.list_2_file(images_path, images_folder + 'images_path.txt')
         return images_path
 
-    def make_labels(self, file_path, file_name):
+    def make_labels(self, file_name):
         """
         :param images_folder:
         :return:
         """
-        if not os.path.exists(file_path + file_name):
+        if not os.path.exists(self.file_path + file_name):
             return 'path wrong'
         orb = cv2.ORB_create()
         arr = np.zeros((8, 128, 128))
-        with open(file_path + file_name, 'r') as f:
+        with open(self.file_path + file_name, 'r') as f:
             lines = f.readlines()
 
             for line in lines:
@@ -74,7 +74,7 @@ class DataProducer:
                     img_name = line[line.rindex('/') + 1:line.rindex('.')].strip('\n')
 
                 # with open( ,'w+') as txt_file:
-                img = cv2.imread((file_path + line).strip('\n'), 0)
+                img = cv2.imread((self.file_path + line).strip('\n'), 0)
 
                 img = cv2.resize(img, (128, 128), img)
 
@@ -101,11 +101,8 @@ class DataProducer:
                     arr[6, x, y] = response
                     arr[7, x, y] = size
 
-                np.save(file_path + category + '/' + img_name + '.npy', arr)
+                np.save(self.file_path + category + '/' + img_name + '.npy', arr)
                 arr[arr != 0] = 0
-
-
-
 
     def partition_data(self, images_folder):
         # 5000 train data 2000 validation data 2145 test data
@@ -188,12 +185,46 @@ class DataProducer:
     def get_label(self):
         pass
 
-    def get_data(self, batchsize):
-        pass
+    def get_data(self, batchsize, singal='train'):
+        if singal == 'valid':
+            file = 'validation_set.txt'
+        elif "train":
+            file = 'train_set.txt'
+        else:
+            file = 'testing_set.txt'
+        f = open(self.file_path + 'train_set.txt')
+        lines = f.readlines()
+        self.n_batches = int(len(lines) / batchsize)
+        total_samples = self.n_batches * batchsize
+        path_A = np.random.choice(lines, total_samples, replace=False)
+        for i in range(self.n_batches - 1):
+            batch_ = path_A[i * batchsize:(i + 1) * batchsize]
+            input_data = []
+            label = []
+            for img_path in batch_:
+                img_path = img_path.strip('\n')
+                # ss = self.file_path + img_path
+                img_ = cv2.imread(self.file_path + img_path, 0)
+                img_ = cv2.resize(img_, (128, 128), img_)
+                img_ = img_[:, :, np.newaxis]
+                input_data.append(img_)
 
+                if img_path.find('.') != -1:
+                    path = img_path[:img_path.rindex('.')]
+                else:
+                    print(img_path)
+                    raise RuntimeError('img_pathError')
+                output = np.load(self.file_path + path + '.npy')
+                output = np.swapaxes(output, 0, 2)
+                label.append(output)
+
+            input_data = np.array(input_data)
+            # input_data = np.array(input_data)/127.5 - 1.
+            label = np.array(label)
+            return input_data, label
 
 if __name__ == '__main__':
     path = 'F:/paper/101_ObjectCategories/101_ObjectCategories/'
     data_producer = DataProducer(path)
 
-    res = data_producer.make_labels(path, 'images_path.txt')
+    res = data_producer.get_data(2)
